@@ -1,0 +1,4 @@
+name = Field Copy
+description = Allows you to copy fields
+dependencies[] = field_ui
+core = 7.x

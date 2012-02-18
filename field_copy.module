@@ -1,0 +1,77 @@
+<?php
+
+/**
+ * Implements hook_form_FORM_ID_alter() for field_ui_field_overview_form().
+ *
+ * Adds copy links to the overview table.
+ */
+function field_copy_form_field_ui_field_overview_form_alter(&$form, &$form_state) {
+  $form['fields']['#header'][6]['colspan'] = 3;
+
+  foreach ($form['fields'] as $field_name => &$row) {
+    // Skip stuff that is just about the form.
+    if ($field_name[0] == '#') {
+      continue;
+    }
+
+    // Skip fields that couldn't be deleted, i.e. fields that are not real
+    // fields.
+    if ($field_name[0] == '_' || !isset($row['delete']['#href'])) {
+      $row['copy'] = array();
+    }
+    else {
+      $row['copy'] = array(
+        '#type' => 'link',
+        '#title' => t('copy'),
+        '#href' => drupal_substr($row['delete']['#href'], 0, -6) . 'copy',
+      );
+    }
+  }
+}
+
+/**
+ * Implements hook_menu().
+ *
+ * @see field_ui_menu()
+ */
+function field_copy_menu() {
+  $items = array();
+
+  foreach (entity_get_info() as $entity_type => $entity_info) {
+    if ($entity_info['fieldable']) {
+      foreach ($entity_info['bundles'] as $bundle_name => $bundle_info) {
+        if (isset($bundle_info['admin'])) {
+          $access = array_intersect_key($bundle_info['admin'], drupal_map_assoc(array('access callback', 'access arguments')));
+          $access += array(
+            'access callback' => 'user_access',
+            'access arguments' => array('administer site configuration'),
+          );
+
+          $path = $bundle_info['admin']['path'];
+
+          if (isset($bundle_info['admin']['bundle argument'])) {
+            $bundle_arg = $bundle_info['admin']['bundle argument'];
+            $bundle_pos = (string) $bundle_arg;
+          }
+          else {
+            $bundle_arg = $bundle_name;
+            $bundle_pos = '0';
+          }
+
+          $field_position = count(explode('/', $path)) + 1;
+
+          $items[$path . '/fields/%field_ui_menu/copy'] = array(
+            'load arguments' => array($entity_type, $bundle_arg, $bundle_pos, '%map'),
+            'title' => 'Copy',
+            'page callback' => 'drupal_get_form',
+            'page arguments' => array('field_copy_form', $field_position),
+            'type' => MENU_LOCAL_TASK,
+            'file' => 'field_copy.admin.inc',
+          ) + $access;
+        }
+      }
+    }
+  }
+
+  return $items;
+}
