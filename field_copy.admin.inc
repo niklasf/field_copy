@@ -105,7 +105,8 @@ function field_copy_form_submit($form, &$form_state) {
     'operations' => array(
       array('field_copy_values_batch_step', array($form_state['field_instance'], $new_field_instance))
     ),
-    'file' => 'field_copy.admin.inc',
+    'finished' => 'field_copy_values_batch_finished',
+    'file' => drupal_get_path('module', 'field_copy') . '/field_copy.admin.inc',
   );
   batch_set($batch);
 
@@ -118,6 +119,41 @@ function field_copy_form_submit($form, &$form_state) {
 /**
  * Batch API operation callback for field_copy_form_submit().
  */
-function field_copy_values_batch_step(&$context) {
-  dpm($context);
+function field_copy_values_batch_step($old_instance, $new_instance, &$context) {
+  $query = new EntityFieldQuery();
+  $query
+    ->entityCondition('entity_type', $new_instance['entity_type'])
+    ->entityCondition('bundle', $new_instance['bundle']);
+
+  if (empty($context['sandbox'])) {
+    $count_query = clone $query;
+    $context['sandbox']['max'] = $query->count()->execute();
+    $context['sandbox']['current_entity'] = 0;
+    $context['sandbox']['progress'] = 0;
+  }
+
+  $entities = $query
+    ->range(0, 10)
+    ->entityCondition('entity_id', $context['sandbox']['current_entity'], '>')
+    ->execute();
+  $entities = reset($entities);
+  dpm($entities);
+
+  if (count($entities) && $context['sandbox']['max']) {
+    $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
+  }
+}
+
+/**
+ * Batch API finished callback for field_copy_form_submit().
+ */
+function field_copy_values_batch_finished($sucess, $result, $operations) {
+  dpm($result);
+  dpm($operations);
+  if ($success) {
+    drupal_set_message(t('Field copied.'));
+  }
+  else {
+    drupal_set_message(t('Finished with an error.'), 'error');
+  }
 }
