@@ -119,11 +119,13 @@ function field_copy_form_submit($form, &$form_state) {
  * Batch API operation callback for field_copy_form_submit().
  */
 function field_copy_values_batch_step($old_instance, $new_instance, &$context) {
+  // Prepare an entity query.
   $query = new EntityFieldQuery();
   $query
     ->entityCondition('entity_type', $new_instance['entity_type'])
     ->entityCondition('bundle', $new_instance['bundle']);
 
+  // Initialize batch process.
   if (empty($context['sandbox'])) {
     $count_query = clone $query;
     $context['sandbox']['max'] = $query->count()->execute();
@@ -132,12 +134,23 @@ function field_copy_values_batch_step($old_instance, $new_instance, &$context) {
     $context['results'] = array(0);
   }
 
+  // Get an array of entities.
   $entities = (array) $query
     ->range(0, 10)
-    ->entityCondition('entity_id', $context['sandbox']['progress'], '>')
+    ->entityCondition('entity_id', $context['sandbox']['current_entity'], '>')
     ->execute();
   $entities = reset($entities);
+
+  // Load field data on the entities.
+  field_attach_load($new_instance['entity_type'], $entities);
+
   foreach ($entities as $id => $entity) {
+    // Update each entity.
+    $entity->{$new_instance['field_name']} = $entity->{$old_instance['field_name']};
+    field_attach_presave($new_instance['entity_type'], $entity);
+    field_attach_update($new_instance['entity_type'], $entity);
+    dpm($entity);
+
     $context['sandbox']['current_entity'] = $id;
     $context['sandbox']['progress']++;
     $context['results'][0]++;
