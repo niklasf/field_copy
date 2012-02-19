@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Allows the site administrator to copy fields.
+ */
+
+/**
  * Implements hook_form_FORM_ID_alter() for field_ui_field_overview_form().
  *
  * Adds copy links to the overview table.

@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * The field copy form.
+ */
+
+/**
  * Form constructor for a field copy form.
  *
  * @param $field_instance
