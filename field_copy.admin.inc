@@ -62,7 +62,7 @@ function field_copy_form($form, &$form_state, $field_instance) {
 function field_copy_form_validate($form, &$form_state) {
   $field_name = 'field_' . $form_state['values']['field_name'];
 
-  if (!preg_match('!^field_[a-z0-9]+$!', $field_name)) {
+  if (!preg_match('!^field_[a-z0-9_]+$!', $field_name)) {
     form_set_error('field_name', t('The field name %field_name is invalid. The name must include only lowercase unaccentuated letters, numbers and underscores.', array('%field_name' => $field_name)));
   }
 
