@@ -113,7 +113,6 @@ function field_copy_form_submit($form, &$form_state) {
   // Redirect to the field overview.
   $entity_info = entity_get_info($new_field_instance['entity_type']);
   $form_state['redirect'] = $entity_info['bundles'][$new_field_instance['bundle']]['admin']['real path'] . '/fields';
-  drupal_set_message(t('Field copied.'));
 }
 
 /**
@@ -130,14 +129,19 @@ function field_copy_values_batch_step($old_instance, $new_instance, &$context) {
     $context['sandbox']['max'] = $query->count()->execute();
     $context['sandbox']['current_entity'] = 0;
     $context['sandbox']['progress'] = 0;
+    $context['results'] = array(0);
   }
 
-  $entities = $query
+  $entities = (array) $query
     ->range(0, 10)
-    ->entityCondition('entity_id', $context['sandbox']['current_entity'], '>')
+    ->entityCondition('entity_id', $context['sandbox']['progress'], '>')
     ->execute();
   $entities = reset($entities);
-  dpm($entities);
+  foreach ($entities as $id => $entity) {
+    $context['sandbox']['current_entity'] = $id;
+    $context['sandbox']['progress']++;
+    $context['results'][0]++;
+  }
 
   if (count($entities) && $context['sandbox']['max']) {
     $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
@@ -147,11 +151,9 @@ function field_copy_values_batch_step($old_instance, $new_instance, &$context) {
 /**
  * Batch API finished callback for field_copy_form_submit().
  */
-function field_copy_values_batch_finished($sucess, $result, $operations) {
-  dpm($result);
-  dpm($operations);
+function field_copy_values_batch_finished($success, $results, $operations) {
   if ($success) {
-    drupal_set_message(t('Field copied.'));
+    drupal_set_message(format_plural($results[0], 'One entity updated.', '@count entities updated.'));
   }
   else {
     drupal_set_message(t('Finished with an error.'), 'error');
