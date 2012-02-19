@@ -3,15 +3,18 @@
 /**
  * Form constructor for a field copy form.
  *
- * @param $field
- *   A field array with information about that field that is going to be
- *   copied.
+ * @param $field_instance
+ *   A field instance array with information about that field that is going to
+ *   be copied.
  *
  * @see field_copy_form_validate()
  * @see field_copy_form_submit()
  * @ingroup forms
  */
-function field_copy_form($form, &$form_state, $field) {
+function field_copy_form($form, &$form_state, $field_instance) {
+  $form_state['field_instance'] = $field_instance;
+  $form_state['field'] = field_info_field($field_instance['field_name']);
+
   $form['label'] = array(
     '#type' => 'textfield',
     '#title' => t('Target field label'),
@@ -78,5 +81,21 @@ function field_copy_form_validate($form, &$form_state) {
  * @see field_copy_form_validate()
  */
 function field_copy_form_submit($form, &$form_state) {
-  drupal_set_message(t('Nothing happens, yet.'));
+  // Create the new field.
+  $new_field = field_create_field(array(
+    'field_name' => $form_state['values']['field_name'],
+    'type' => $form_state['field']['type'],
+    'cardinality' => $form_state['field']['cardinality'],
+    'settings' => $form_state['field']['settings'],
+  ));
+
+  // Prepare and create the target field instance.
+  $new_field_instance = array(
+    'label' => $form_state['values']['label'],
+    'field_name' => $new_field['field_name'],
+  ) + $form_state['field_instance'];
+  unset($new_field_instance['id']);
+  unset($new_field_instance['field_id']);
+  unset($new_field_instance['deleted']);
+  $new_field_instance = field_create_instance($new_field_instance);
 }
