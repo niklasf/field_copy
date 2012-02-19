@@ -102,18 +102,28 @@ function _field_copy_target_field_options($form_state) {
  * @see field_copy_form_submit()
  */
 function field_copy_form_validate($form, &$form_state) {
-  $field_name = 'field_' . $form_state['values']['field_name'];
-
-  if (!preg_match('!^field_[a-z_][a-z0-9_]*$!', $field_name)) {
-    form_set_error('field_name', t('The field name %field_name is invalid. The name must include only lowercase unaccentuated letters, numbers and underscores.', array('%field_name' => $field_name)));
+  if ($existing_field = $form_state['values']['existing_field']) {
+    if (array_key_exists($existing_field, _field_copy_target_field_options($form_state))) {
+      $form_state['existing_field'] = $existing_field;
+    }
+    else {
+      form_set_error('existing_field', t('The target field is no longer available.'));
+    }
   }
+  else {
+    $field_name = 'field_' . $form_state['values']['field_name'];
 
-  if (strlen($field_name) > 32) {
-    form_set_error('field_name', t('The field name can be at most 32 characters long.'));
-  }
+    if (!preg_match('!^field_[a-z0-9_]+$!', $field_name)) {
+      form_set_error('field_name', t('The field name %field_name is invalid. The name must include only lowercase unaccentuated letters, numbers and underscores.', array('%field_name' => $field_name)));
+    }
 
-  if (field_read_fields(array('field_name' => $field_name), array('include_inactive' => TRUE))) {
-    form_set_error('field_name', t('The field name %field_name already exists.', array('%field_name' => $field_name)));
+    if (strlen($field_name) > 32) {
+      form_set_error('field_name', t('The field name can be at most 32 characters long.'));
+    }
+
+    if (field_read_fields(array('field_name' => $field_name), array('include_inactive' => TRUE))) {
+      form_set_error('field_name', t('The field name %field_name already exists.', array('%field_name' => $field_name)));
+    }
   }
 }
 
