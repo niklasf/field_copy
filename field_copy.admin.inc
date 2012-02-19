@@ -98,4 +98,26 @@ function field_copy_form_submit($form, &$form_state) {
   unset($new_field_instance['field_id']);
   unset($new_field_instance['deleted']);
   $new_field_instance = field_create_instance($new_field_instance);
+
+  // Create a batch process for updating the entities.
+  $batch = array(
+    'title' => t('Copying field values'),
+    'operations' => array(
+      array('field_copy_values_batch_step', array($form_state['field_instance'], $new_field_instance))
+    ),
+    'file' => 'field_copy.admin.inc',
+  );
+  batch_set($batch);
+
+  // Redirect to the field overview.
+  $entity_info = entity_get_info($new_field_instance['entity_type']);
+  $form_state['redirect'] = $entity_info['bundles'][$new_field_instance['bundle']]['admin']['real path'] . '/fields';
+  drupal_set_message(t('Field copied.'));
+}
+
+/**
+ * Batch API operation callback for field_copy_form_submit().
+ */
+function field_copy_values_batch_step(&$context) {
+  dpm($context);
 }
