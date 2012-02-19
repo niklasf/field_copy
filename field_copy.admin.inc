@@ -26,10 +26,8 @@ function field_copy_form($form, &$form_state, $field_instance) {
     '#type' => 'select',
     '#title' => t('Target'),
     '#empty_option' => t('- Create a new field - '),
-    '#options' => array(
-      // TODO: Add support for existing fields
-    ),
-    '#description' => t('The values can only be copied to a field that has the right field type and is not yet on the bundle.'),
+    '#options' => _field_copy_target_field_options($form_state),
+    '#description' => t('The values can only be copied to a field that has the right field type and is not yet on the bundle. Only target fields with same or greater cardinality are available.'),
   );
 
   $form['field_name'] = array(
@@ -52,6 +50,50 @@ function field_copy_form($form, &$form_state, $field_instance) {
   );
 
   return $form;
+}
+
+/**
+ * Creates an associative array of available target fields.
+ *
+ * @param $form_state
+ *   An associative array with 'field_instance' and 'field' set with field API
+ *   data structures.
+ *
+ * @return
+ *   An array of fields, keyed by field names.
+ */
+function _field_copy_target_field_options($form_state) {
+  $options = array();
+
+  $field_instance = $form_state['field_instance'];
+  $source_field = $form_state['field'];
+
+  foreach (field_info_fields() as $field_name => $field) {
+    // Skip fields that have a different type.
+    if ($field['type'] != $source_field['type']) {
+      continue;
+    }
+
+    // Skip fields that are already on the bundle.
+    if (!empty($field['bundles'][$field_instance['entity_type']])) {
+      $bundles = $field['bundles'][$field_instance['entity_type']];
+    }
+    else {
+      $bundles = array();
+    }
+    if (in_array($field_instance['bundle'], $bundles)) {
+      continue;
+    }
+
+    // Skip fields with smaller cardinality.
+    if ($source_field['cardinality'] > $field['cardinality'] && $field['cardinality'] != -1) {
+      continue;
+    }
+
+    $options[$field['field_name']] = t('@field_name (bundles: @bundles)', array('@field_name' => $field['field_name'], '@bundles' => implode(', ', $bundles)));
+  }
+
+  return $options;
 }
 
 /**
