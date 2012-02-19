@@ -206,7 +206,6 @@ function field_copy_values_batch_step($old_instance, $new_instance, &$context) {
     $entity->{$new_instance['field_name']} = $entity->{$old_instance['field_name']};
     field_attach_presave($new_instance['entity_type'], $entity);
     field_attach_update($new_instance['entity_type'], $entity);
-    dpm($entity);
 
     $context['sandbox']['current_entity'] = $id;
     $context['sandbox']['progress']++;
