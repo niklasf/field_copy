@@ -133,13 +133,18 @@ function field_copy_form_validate($form, &$form_state) {
  * @see field_copy_form_validate()
  */
 function field_copy_form_submit($form, &$form_state) {
-  // Create the new field.
-  $new_field = field_create_field(array(
-    'field_name' => 'field_' . $form_state['values']['field_name'],
-    'type' => $form_state['field']['type'],
-    'cardinality' => $form_state['field']['cardinality'],
-    'settings' => $form_state['field']['settings'],
-  ));
+  if (!empty($form_state['existing_field'])) {
+    $new_field = field_info_field($form_state['existing_field']);
+  }
+  else {
+    // Create the new field.
+    $new_field = field_create_field(array(
+      'field_name' => 'field_' . $form_state['values']['field_name'],
+      'type' => $form_state['field']['type'],
+      'cardinality' => $form_state['field']['cardinality'],
+      'settings' => $form_state['field']['settings'],
+    ));
+  }
 
   // Prepare and create the target field instance.
   $new_field_instance = array(
