@@ -16,6 +16,7 @@ function field_copy_form($form, &$form_state, $field) {
     '#type' => 'textfield',
     '#title' => t('Target field label'),
     '#description' => t('The label of the field to copy the values to.'),
+    '#required' => TRUE,
   );
 
   $form['existing_field'] = array(
